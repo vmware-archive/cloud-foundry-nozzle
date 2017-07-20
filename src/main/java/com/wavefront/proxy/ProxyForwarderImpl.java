@@ -91,7 +91,16 @@ public class ProxyForwarderImpl implements ProxyForwarder {
 
   private void send(String metricName, double metricValue, Long timestamp, String source, Map<String, String> tags) {
     try {
-      logger.info("Sending metric:" + metricName);
+      // The if else if condition is not needed with the latest proxy but
+      // what if some customer is running Wavefront PCF nozzle with an older proxy ??
+      if (timestamp.toString().length() == 19) {
+        // nanoseconds -> convert to milliseconds
+        timestamp /= 1000000;
+      } else if (timestamp.toString().length() == 16) {
+        // microseconds -> convert to milliseconds
+        timestamp /= 1000;
+      }
+      logger.info("Sending metric:" + metricName + " at timestamp: " + timestamp);
       wavefront.send(metricName, metricValue, timestamp, source, tags);
     } catch (IOException e) {
       logger.warning("Can't send data to Wavefront proxy!");

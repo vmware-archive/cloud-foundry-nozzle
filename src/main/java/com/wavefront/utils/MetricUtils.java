@@ -2,6 +2,8 @@ package com.wavefront.utils;
 
 import org.cloudfoundry.doppler.Envelope;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -20,7 +22,20 @@ public class MetricUtils {
 
   public static String getSource(Envelope envelope) {
     // TODO - this might change ...
-    return envelope.getIp();
+    // Precedence order - { IP -> Job -> InetAddress.getLocalHost().getHostName() }
+    if (!isBlank(envelope.getIp())) {
+      return envelope.getIp();
+    }
+
+    if (!isBlank(envelope.getJob())) {
+      return envelope.getJob();
+    }
+
+    try {
+      return InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      return "unknown";
+    }
   }
 
   public static Map<String, String> getTags(Envelope envelope) {
@@ -34,5 +49,17 @@ public class MetricUtils {
       map.put(JOB, Objects.toString(envelope.getJob()));
     }
     return map;
+  }
+
+  private static boolean isBlank(String s) {
+    if (s == null || s.isEmpty()) {
+      return true;
+    }
+    for (int i = 0; i < s.length(); i++) {
+      if (!Character.isWhitespace(s.charAt(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 }
