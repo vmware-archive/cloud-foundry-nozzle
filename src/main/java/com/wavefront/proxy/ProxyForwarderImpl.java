@@ -56,7 +56,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
                 getSource(envelope), getTags(envelope));
         // MetricName: "pcf.container.<origin>.disk_bytes_quota"
         send(ContainerMetricUtils.getMetricName(envelope, DISK_BYTES_QUOTA_SUFFIX),
-                envelope.getContainerMetric().getDiskBytes(), getTimestamp(envelope),
+                envelope.getContainerMetric().getDiskBytesQuota(), getTimestamp(envelope),
                 getSource(envelope), getTags(envelope));
         // MetricName: "pcf.container.<origin>.memory_bytes"
         send(ContainerMetricUtils.getMetricName(envelope, MEMORY_BYTES_SUFFIX),
@@ -64,7 +64,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
                 getSource(envelope), getTags(envelope));
         // MetricName: "pcf.container.<origin>.memory_bytes_quota"
         send(ContainerMetricUtils.getMetricName(envelope, MEMORY_BYTES_QUOTA_SUFFIX),
-                envelope.getContainerMetric().getMemoryBytes(), getTimestamp(envelope),
+                envelope.getContainerMetric().getMemoryBytesQuota(), getTimestamp(envelope),
                 getSource(envelope), getTags(envelope));
         return;
       case ERROR:
