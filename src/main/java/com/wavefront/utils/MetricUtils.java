@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.wavefront.utils.Constants.*;
+import static org.cloudfoundry.doppler.EventType.CONTAINER_METRIC;
 
 /**
  * Wavefront Metric Utils
@@ -16,6 +17,7 @@ import static com.wavefront.utils.Constants.*;
  * @author Sushant Dewan (sushant@wavefront.com).
  */
 public class MetricUtils {
+
   public static long getTimestamp(Envelope envelope) {
     return envelope.getTimestamp();
   }
@@ -38,15 +40,33 @@ public class MetricUtils {
     }
   }
 
+  public static String getPcfMetricNamePrefix() {
+    return PCF_PREFIX + METRICS_NAME_SEP;
+  }
+
+  public static String getOrigin(Envelope envelope) {
+    // Note - Don't invoke envelope.getOrigin elsewhere in the code
+    // because in future we might convert origin to lower_case
+    return envelope.getOrigin();
+  }
+
   public static Map<String, String> getTags(Envelope envelope) {
     Map<String, String> map = new HashMap<>();
-    // TODO - not sure yet whether we want eventType as the tag ...
-    map.put(EVENT_TYPE, Objects.toString(envelope.getEventType()));
+
     if (envelope.getDeployment() != null && envelope.getDeployment().length() > 0) {
       map.put(DEPLOYMENT, Objects.toString(envelope.getDeployment()));
     }
     if (envelope.getJob() != null && envelope.getJob().length() > 0) {
       map.put(JOB, Objects.toString(envelope.getJob()));
+    }
+
+    if (envelope.getEventType().equals(CONTAINER_METRIC)) {
+      /**
+       * The instanceIndex of the contained application
+       * along with applicationId, should uniquely identify a container.
+       */
+      map.put(APPLICATION_ID, envelope.getContainerMetric().getApplicationId());
+      map.put(INSTANCE_INDEX, String.valueOf(envelope.getContainerMetric().getInstanceIndex().toString()));
     }
     return map;
   }

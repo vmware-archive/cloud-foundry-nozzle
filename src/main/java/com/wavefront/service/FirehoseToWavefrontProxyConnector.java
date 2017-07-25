@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.scheduler.Schedulers;
 
+import static com.wavefront.utils.Constants.WAVEFRONT_FIREHOSE_NOZZLE;
+
 /**
  * Service class responsible for connecting to a firehose and
  * forwarding event envelope via nozzle to Wavefront Proxy
@@ -33,7 +35,7 @@ public class FirehoseToWavefrontProxyConnector {
   public void connect() {
     this.dopplerClient.firehose(
             FirehoseRequest.builder().subscriptionId(firehoseProperties.getSubscriptionId()).build())
-            .subscribeOn(Schedulers.newParallel("wavefront-firehose-nozzle", firehoseProperties.getParallelism()))
+            .subscribeOn(Schedulers.newParallel(WAVEFRONT_FIREHOSE_NOZZLE, firehoseProperties.getParallelism()))
             .filter(envelope -> filterEventType(envelope.getEventType()))
             .subscribe(envelope -> proxyForwarder.forward(envelope));
   }

@@ -5,7 +5,7 @@ applications:
   memory: 2G
   no-route: true
   health-check-type: process
-  path: ./wavefront-nozzle-1.0-SNAPSHOT.jar
+  path: <ReplaceMe with path to the wavefront-nozzle JAR>
   buildpack: https://github.com/cloudfoundry/java-buildpack.git 
   env:
     # PCF properties

@@ -33,58 +33,44 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   public void forward(Envelope envelope) {
     switch (envelope.getEventType()) {
       case VALUE_METRIC:
-        // Format: "pcf.origin.<name>.<unit>"
+        // MetricName: "pcf.<origin>.<name>.<unit>"
         send(ValueMetricUtils.getMetricName(envelope), envelope.getValueMetric().value(),
                 getTimestamp(envelope), getSource(envelope), getTags(envelope));
         return;
       case COUNTER_EVENT:
-        // Format: "pcf.origin.<name>.total"
+        // MetricName: "pcf.<origin>.<name>.total"
         send(CounterEventUtils.getMetricName(envelope, TOTAL_SUFFIX), envelope.getCounterEvent().getTotal(),
                 getTimestamp(envelope), getSource(envelope), getTags(envelope));
-        // Format: "pcf.origin.<name>.delta"
+        // MetricName: "pcf.<origin>.<name>.delta"
         send(CounterEventUtils.getMetricName(envelope, DELTA_SUFFIX), envelope.getCounterEvent().getDelta(),
                 getTimestamp(envelope), getSource(envelope), getTags(envelope));
         return;
       case CONTAINER_METRIC:
-        /**
-         * TODO - revisit the container metric format ...
-         *
-         * Example: Right now below container metric
-         *
-         * origin:"rep" eventType:ContainerMetric timestamp:1500418763082458372 deployment:"cf" job:"diego_cell"
-         * index:"7b4512eb-a99c-435d-9c65-878b60fe29fe" ip:"10.202.5.16"
-         * containerMetric:<applicationId:"957a4593-28da-43a1-92f6-50cffd75eca9" instanceIndex:1
-         * cpuPercentage:0.2728349571783102 memoryBytes:667291648 diskBytes:182566912 6:1073741824 7:1073741824 >
-         *
-         * is transformed into
-         *
-         * "pcf.rep.957a4593-28da-43a1-92f6-50cffd75eca9.1.cpuPercentage 0.2728349571783102 1500418763082458372
-         * source=10.202.5.16 eventType=CONTAINER_METRIC job=diego_cell deployment=cf"
-         *
-         */
+        // MetricName: "pcf.container.<origin>.cpu_percentage"
         send(ContainerMetricUtils.getMetricName(envelope, CPU_PERCENTAGE_SUFFIX),
                 envelope.getContainerMetric().getCpuPercentage(), getTimestamp(envelope),
                 getSource(envelope), getTags(envelope));
+        // MetricName: "pcf.container.<origin>.disk_bytes"
         send(ContainerMetricUtils.getMetricName(envelope, DISK_BYTES_SUFFIX),
                 envelope.getContainerMetric().getDiskBytes(), getTimestamp(envelope),
                 getSource(envelope), getTags(envelope));
-        // Note: diskBytesQuota is not a metric
+        // MetricName: "pcf.container.<origin>.disk_bytes_quota"
+        send(ContainerMetricUtils.getMetricName(envelope, DISK_BYTES_QUOTA_SUFFIX),
+                envelope.getContainerMetric().getDiskBytes(), getTimestamp(envelope),
+                getSource(envelope), getTags(envelope));
+        // MetricName: "pcf.container.<origin>.memory_bytes"
         send(ContainerMetricUtils.getMetricName(envelope, MEMORY_BYTES_SUFFIX),
                 envelope.getContainerMetric().getMemoryBytes(), getTimestamp(envelope),
                 getSource(envelope), getTags(envelope));
-        // Note: memoryBytesQuota is not a metric
-        // TODO - instead of sending disk_bytes and memory_bytes,
-        // send the ratio of (memory_bytes/memory_bytes_quota)
-        // and (disk_bytes/disk_bytes_quota) ??
+        // MetricName: "pcf.container.<origin>.memory_bytes_quota"
+        send(ContainerMetricUtils.getMetricName(envelope, MEMORY_BYTES_QUOTA_SUFFIX),
+                envelope.getContainerMetric().getMemoryBytes(), getTimestamp(envelope),
+                getSource(envelope), getTags(envelope));
         return;
       case ERROR:
-        // TODO
-        return;
       case HTTP_START_STOP:
-        // TODO
-        return;
       case LOG_MESSAGE:
-        // TODO
+        // TODO - add support for these in future releases ...
         return;
     }
   }

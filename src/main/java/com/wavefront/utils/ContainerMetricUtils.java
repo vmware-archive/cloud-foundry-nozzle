@@ -1,10 +1,11 @@
 package com.wavefront.utils;
 
-import org.cloudfoundry.doppler.ContainerMetric;
 import org.cloudfoundry.doppler.Envelope;
 
+import static com.wavefront.utils.Constants.CONTAINER_PREFIX;
 import static com.wavefront.utils.Constants.METRICS_NAME_SEP;
-import static com.wavefront.utils.Constants.PCF_PREFIX;
+import static com.wavefront.utils.MetricUtils.getOrigin;
+import static com.wavefront.utils.MetricUtils.getPcfMetricNamePrefix;
 
 /**
  * Utils related to ContainerMetric
@@ -14,11 +15,6 @@ import static com.wavefront.utils.Constants.PCF_PREFIX;
 public class ContainerMetricUtils {
   // ContainerMetrics Utils
   public static String getMetricName(Envelope envelope, String suffix) {
-    // TODO - verify if this is what we want ...
-    ContainerMetric containerMetric = envelope.getContainerMetric();
-    // The instance index of the contained application.
-    // (This, with applicationId, should uniquely identify a container.)
-    return PCF_PREFIX + envelope.getOrigin() + METRICS_NAME_SEP + containerMetric.getApplicationId()
-            + METRICS_NAME_SEP + containerMetric.getInstanceIndex() + METRICS_NAME_SEP + suffix;
+    return getPcfMetricNamePrefix() + CONTAINER_PREFIX + METRICS_NAME_SEP + getOrigin(envelope) + METRICS_NAME_SEP + suffix;
   }
 }

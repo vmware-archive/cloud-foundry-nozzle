@@ -3,7 +3,8 @@ package com.wavefront.utils;
 import org.cloudfoundry.doppler.Envelope;
 
 import static com.wavefront.utils.Constants.METRICS_NAME_SEP;
-import static com.wavefront.utils.Constants.PCF_PREFIX;
+import static com.wavefront.utils.MetricUtils.getOrigin;
+import static com.wavefront.utils.MetricUtils.getPcfMetricNamePrefix;
 
 /**
  * Utils related to ValueMetric
@@ -12,7 +13,7 @@ import static com.wavefront.utils.Constants.PCF_PREFIX;
  */
 public class ValueMetricUtils {
   public static String getMetricName(Envelope envelope) {
-    return PCF_PREFIX + envelope.getOrigin() + METRICS_NAME_SEP + envelope.getValueMetric().getName() +
+    return getPcfMetricNamePrefix() + getOrigin(envelope) + METRICS_NAME_SEP + envelope.getValueMetric().getName() +
             METRICS_NAME_SEP + envelope.getValueMetric().getUnit();
   }
 }
