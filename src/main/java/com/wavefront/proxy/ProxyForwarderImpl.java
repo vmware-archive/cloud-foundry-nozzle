@@ -21,11 +21,13 @@ import static com.wavefront.utils.MetricUtils.*;
  */
 public class ProxyForwarderImpl implements ProxyForwarder {
 
-  protected static final Logger logger = Logger.getLogger(ProxyForwarderImpl.class.getCanonicalName());
+  private static final Logger logger = Logger.getLogger(ProxyForwarderImpl.class.getCanonicalName());
 
   private final Wavefront wavefront;
 
   public ProxyForwarderImpl(WavefrontProxyProperties proxyProperties) throws IOException {
+    logger.info(String.format("Forwarding PCF metrics to Wavefront proxy at %s:%s",
+            proxyProperties.getHostname(), proxyProperties.getPort()));
     wavefront = new Wavefront(proxyProperties.getHostname(), proxyProperties.getPort());
   }
 

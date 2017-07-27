@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Configuration class responsible for instantiating all the Spring Beans
@@ -30,6 +31,9 @@ import java.io.IOException;
 @Configuration
 @EnableConfigurationProperties({PcfProperties.class, WavefrontProxyProperties.class, FirehoseProperties.class})
 public class BeansConfiguration {
+
+  private static final Logger logger = Logger.getLogger(BeansConfiguration.class.getCanonicalName());
+
 
   @Autowired
   private FirehoseToWavefrontProxyConnector firehoseToWavefrontProxyConnector;
@@ -49,6 +53,8 @@ public class BeansConfiguration {
 
   @Bean
   public PasswordGrantTokenProvider tokenProvider(PcfProperties pcfProperties) {
+    logger.info(String.format("Using PCF properties, host: %s and user: %s",
+            pcfProperties.getHost(), pcfProperties.getUser()));
     return PasswordGrantTokenProvider.builder()
             .username(pcfProperties.getUser())
             .password(pcfProperties.getPassword())

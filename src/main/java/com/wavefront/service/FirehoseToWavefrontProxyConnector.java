@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.logging.Logger;
+
 import static com.wavefront.utils.Constants.WAVEFRONT_FIREHOSE_NOZZLE;
 
 /**
@@ -19,6 +21,7 @@ import static com.wavefront.utils.Constants.WAVEFRONT_FIREHOSE_NOZZLE;
  */
 @Service
 public class FirehoseToWavefrontProxyConnector {
+  private static final Logger logger = Logger.getLogger(FirehoseToWavefrontProxyConnector.class.getCanonicalName());
   private final DopplerClient dopplerClient;
   private final FirehoseProperties firehoseProperties;
   private final ProxyForwarder proxyForwarder;
@@ -33,6 +36,12 @@ public class FirehoseToWavefrontProxyConnector {
   }
 
   public void connect() {
+    logger.info(String.format("Connecting to firehose using subscription id: %s and " +
+                    "forwarding following event types: %s in parallel: %s",
+            firehoseProperties.getSubscriptionId(),
+            String.join(", ", firehoseProperties.getEventTypes().toString()),
+            firehoseProperties.getParallelism()));
+
     this.dopplerClient.firehose(
             FirehoseRequest.builder().subscriptionId(firehoseProperties.getSubscriptionId()).build())
             .subscribeOn(Schedulers.newParallel(WAVEFRONT_FIREHOSE_NOZZLE, firehoseProperties.getParallelism()))
