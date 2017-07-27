@@ -9,6 +9,7 @@ import org.cloudfoundry.doppler.Envelope;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.wavefront.utils.Constants.*;
@@ -91,7 +92,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
       logger.info("Sending metric:" + metricName + " at timestamp: " + timestamp);
       wavefront.send(metricName, metricValue, timestamp, source, tags);
     } catch (IOException e) {
-      logger.warning("Can't send data to Wavefront proxy!");
+      logger.log(Level.WARNING, "Can't send data to Wavefront proxy!", e);
     }
   }
 }
