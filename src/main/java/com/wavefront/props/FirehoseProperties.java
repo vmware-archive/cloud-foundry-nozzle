@@ -10,11 +10,13 @@ import java.util.List;
  *
  * @author Sushant Dewan (sushant@wavefront.com).
  */
-@ConfigurationProperties(prefix="pcf.firehose")
+@ConfigurationProperties(prefix = "pcf.firehose")
 public class FirehoseProperties {
   private List<EventType> eventTypes;
   private String subscriptionId;
-  // By default 4 threads sending metrics to proxy
+  /**
+   * By default 4 threads sending metrics to proxy
+   */
   private int parallelism = 4;
 
   public List<EventType> getEventTypes() {

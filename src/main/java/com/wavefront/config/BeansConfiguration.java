@@ -34,7 +34,6 @@ public class BeansConfiguration {
 
   private static final Logger logger = Logger.getLogger(BeansConfiguration.class.getCanonicalName());
 
-
   @Autowired
   private FirehoseToWavefrontProxyConnector firehoseToWavefrontProxyConnector;
 
@@ -45,47 +44,37 @@ public class BeansConfiguration {
 
   @Bean
   public DefaultConnectionContext connectionContext(PcfProperties pcfProperties) {
-    return DefaultConnectionContext.builder()
-            .apiHost(pcfProperties.getHost())
-            .skipSslValidation(pcfProperties.isSkipSslValidation())
-            .build();
+    return DefaultConnectionContext.builder().apiHost(pcfProperties.getHost()).
+            skipSslValidation(pcfProperties.isSkipSslValidation()).build();
   }
 
   @Bean
   public PasswordGrantTokenProvider tokenProvider(PcfProperties pcfProperties) {
     logger.info(String.format("Using PCF properties, host: %s and user: %s",
             pcfProperties.getHost(), pcfProperties.getUser()));
-    return PasswordGrantTokenProvider.builder()
-            .username(pcfProperties.getUser())
-            .password(pcfProperties.getPassword())
-            .build();
+    return PasswordGrantTokenProvider.builder().username(pcfProperties.getUser()).
+            password(pcfProperties.getPassword()).build();
   }
 
   @Bean
   public ReactorCloudFoundryClient cloudFoundryClient(ConnectionContext connectionContext,
                                                       TokenProvider tokenProvider) {
-    return ReactorCloudFoundryClient.builder()
-            .connectionContext(connectionContext)
-            .tokenProvider(tokenProvider)
-            .build();
+    return ReactorCloudFoundryClient.builder().connectionContext(connectionContext).
+            tokenProvider(tokenProvider).build();
   }
 
   @Bean
   public ReactorDopplerClient dopplerClient(ConnectionContext connectionContext,
                                             TokenProvider tokenProvider) {
-    return ReactorDopplerClient.builder()
-            .connectionContext(connectionContext)
-            .tokenProvider(tokenProvider)
-            .build();
+    return ReactorDopplerClient.builder().connectionContext(connectionContext).
+            tokenProvider(tokenProvider).build();
   }
 
   @Bean
   public ReactorUaaClient uaaClient(ConnectionContext connectionContext,
                                     TokenProvider tokenProvider) {
-    return ReactorUaaClient.builder()
-            .connectionContext(connectionContext)
-            .tokenProvider(tokenProvider)
-            .build();
+    return ReactorUaaClient.builder().connectionContext(connectionContext).
+            tokenProvider(tokenProvider).build();
   }
 
   @Bean

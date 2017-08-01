@@ -2,6 +2,7 @@ package com.wavefront.utils;
 
 import org.cloudfoundry.doppler.Envelope;
 
+import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -18,6 +19,16 @@ import static org.cloudfoundry.doppler.EventType.CONTAINER_METRIC;
  */
 public class MetricUtils {
 
+  private static String INET_ADDR_LOCAL_HOST_NAME;
+
+  static {
+    try {
+      INET_ADDR_LOCAL_HOST_NAME = InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      INET_ADDR_LOCAL_HOST_NAME = "unknown";
+    }
+  }
+
   public static long getTimestamp(Envelope envelope) {
     return envelope.getTimestamp();
   }
@@ -33,11 +44,7 @@ public class MetricUtils {
       return envelope.getJob();
     }
 
-    try {
-      return InetAddress.getLocalHost().getHostName();
-    } catch (UnknownHostException e) {
-      return "unknown";
-    }
+    return INET_ADDR_LOCAL_HOST_NAME;
   }
 
   public static String getPcfMetricNamePrefix() {
@@ -68,10 +75,12 @@ public class MetricUtils {
       map.put(APPLICATION_ID, envelope.getContainerMetric().getApplicationId());
       map.put(INSTANCE_INDEX, String.valueOf(envelope.getContainerMetric().getInstanceIndex().toString()));
     }
+    // Add all pre-existing PCF envelope tags ...
+    map.putAll(envelope.getTags());
     return map;
   }
 
-  private static boolean isBlank(String s) {
+  private static boolean isBlank(@Nullable String s) {
     if (s == null || s.isEmpty()) {
       return true;
     }

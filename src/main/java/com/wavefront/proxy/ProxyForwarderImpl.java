@@ -1,5 +1,6 @@
 package com.wavefront.proxy;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.wavefront.integrations.Wavefront;
 import com.wavefront.props.WavefrontProxyProperties;
 import com.wavefront.utils.ContainerMetricUtils;
@@ -9,6 +10,7 @@ import org.cloudfoundry.doppler.Envelope;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,6 +25,8 @@ import static com.wavefront.utils.MetricUtils.*;
 public class ProxyForwarderImpl implements ProxyForwarder {
 
   private static final Logger logger = Logger.getLogger(ProxyForwarderImpl.class.getCanonicalName());
+  private final RateLimiter summaryLogger = RateLimiter.create(0.2);
+  private final AtomicLong numMetrics = new AtomicLong(0);
 
   private final Wavefront wavefront;
 
@@ -82,14 +86,21 @@ public class ProxyForwarderImpl implements ProxyForwarder {
     try {
       // The if else if condition is not needed with the latest proxy but
       // what if some customer is running Wavefront PCF nozzle with an older proxy ??
-      if (timestamp.toString().length() == 19) {
+      int len = timestamp.toString().length();
+      if (len == 19) {
         // nanoseconds -> convert to milliseconds
         timestamp /= 1000000;
-      } else if (timestamp.toString().length() == 16) {
+      } else if (len == 16) {
         // microseconds -> convert to milliseconds
         timestamp /= 1000;
       }
-      logger.info("Sending metric:" + metricName + " at timestamp: " + timestamp);
+      numMetrics.incrementAndGet();
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine("Sending metric:" + metricName + " at timestamp: " + timestamp);
+      }
+      if (summaryLogger.tryAcquire()) {
+        logger.info("Total number of metrics sent: " + numMetrics);
+      }
       wavefront.send(metricName, metricValue, timestamp, source, tags);
     } catch (IOException e) {
       logger.log(Level.WARNING, "Can't send data to Wavefront proxy!", e);

@@ -43,10 +43,10 @@ public class FirehoseToWavefrontProxyConnector {
             firehoseProperties.getParallelism()));
 
     this.dopplerClient.firehose(
-            FirehoseRequest.builder().subscriptionId(firehoseProperties.getSubscriptionId()).build())
-            .subscribeOn(Schedulers.newParallel(WAVEFRONT_FIREHOSE_NOZZLE, firehoseProperties.getParallelism()))
-            .filter(envelope -> filterEventType(envelope.getEventType()))
-            .subscribe(envelope -> proxyForwarder.forward(envelope));
+            FirehoseRequest.builder().subscriptionId(firehoseProperties.getSubscriptionId()).build()).
+            subscribeOn(Schedulers.newParallel(WAVEFRONT_FIREHOSE_NOZZLE, firehoseProperties.getParallelism())).
+            filter(envelope -> filterEventType(envelope.getEventType())).
+            subscribe(envelope -> proxyForwarder.forward(envelope));
   }
 
   private boolean filterEventType(EventType eventType) {

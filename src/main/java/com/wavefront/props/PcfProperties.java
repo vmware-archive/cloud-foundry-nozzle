@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @author Sushant Dewan (sushant@wavefront.com).
  */
-@ConfigurationProperties(prefix="pcf")
+@ConfigurationProperties(prefix = "pcf")
 public class PcfProperties {
 
   private String user;

@@ -13,8 +13,8 @@ import static com.wavefront.utils.MetricUtils.getPcfMetricNamePrefix;
  * @author Sushant Dewan (sushant@wavefront.com).
  */
 public class ContainerMetricUtils {
-  // ContainerMetrics Utils
   public static String getMetricName(Envelope envelope, String suffix) {
-    return getPcfMetricNamePrefix() + CONTAINER_PREFIX + METRICS_NAME_SEP + getOrigin(envelope) + METRICS_NAME_SEP + suffix;
+    return getPcfMetricNamePrefix() + CONTAINER_PREFIX + METRICS_NAME_SEP +
+            getOrigin(envelope) + METRICS_NAME_SEP + suffix;
   }
 }

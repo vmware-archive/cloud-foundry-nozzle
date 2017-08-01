@@ -12,7 +12,7 @@ public interface ProxyForwarder {
   /**
    * Forward metrics generated from an envelope to the proxy
    *
-   * @param envelope
+   * @param envelope Metrics envelope
    */
   void forward(Envelope envelope);
 }

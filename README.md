@@ -7,7 +7,7 @@ The nozzle takes the data from Loggregator Firehose and forwards those metrics t
 * Make sure you have a working Wavefront proxy with accessible <hostname:port> talking to a Wavefront cloud.
 * Make sure you have a working PCF deployment along with access to pcf.host and a UAA user who is authorized to access the loggregator firehose.
 
-# Steps to deploy and configure the nozzle
+# Steps to manually deploy and configure the nozzle
 
 1. Clone the repo
     * Make sure you have Java Maven installed on your machine.

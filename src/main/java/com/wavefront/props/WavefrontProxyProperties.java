@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @author Sushant Dewan (sushant@wavefront.com).
  */
-@ConfigurationProperties(prefix="wavefront.proxy")
+@ConfigurationProperties(prefix = "wavefront.proxy")
 public class WavefrontProxyProperties {
   private String hostname;
   private int port;
