@@ -25,6 +25,9 @@ import static com.wavefront.utils.MetricUtils.*;
 public class ProxyForwarderImpl implements ProxyForwarder {
 
   private static final Logger logger = Logger.getLogger(ProxyForwarderImpl.class.getCanonicalName());
+  /**
+   * Log summary of numMetrics sent every 5 seconds
+   */
   private final RateLimiter summaryLogger = RateLimiter.create(0.2);
   private final AtomicLong numMetrics = new AtomicLong(0);
 

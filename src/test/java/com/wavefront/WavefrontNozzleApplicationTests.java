@@ -61,7 +61,7 @@ public class WavefrontNozzleApplicationTests {
     FirehoseToWavefrontProxyConnector proxyConnector = new FirehoseToWavefrontProxyConnector(
             dopplerClient, firehoseProperties, proxyForwarder);
     proxyConnector.connect();
-    // proxyConnector.connect() is invoked on a different thread and
+    // proxyForwarder.forward() is invoked on a different thread and
     // EasyMock.verify() is invoked on the current thread
     // TODO - not the best way to do thread synchronization ...
     Thread.sleep(2000);
