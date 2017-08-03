@@ -1,13 +1,16 @@
 package com.wavefront.utils;
 
+import com.google.common.collect.Maps;
+import com.wavefront.model.AppEnvelope;
+import com.wavefront.model.AppInfo;
 import org.cloudfoundry.doppler.Envelope;
 
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.wavefront.utils.Constants.*;
 import static org.cloudfoundry.doppler.EventType.CONTAINER_METRIC;
@@ -30,7 +33,12 @@ public class MetricUtils {
   }
 
   public static long getTimestamp(Envelope envelope) {
-    return envelope.getTimestamp();
+    // envelope.getTimestamp() marked as @Nullable
+    if (envelope.getTimestamp() == null) {
+      return System.currentTimeMillis();
+    } else {
+      return envelope.getTimestamp();
+    }
   }
 
   public static String getSource(Envelope envelope) {
@@ -57,8 +65,9 @@ public class MetricUtils {
     return envelope.getOrigin();
   }
 
-  public static Map<String, String> getTags(Envelope envelope) {
-    Map<String, String> map = new HashMap<>();
+  public static Map<String, String> getTags(AppEnvelope appEnvelope) {
+    Envelope envelope = appEnvelope.getEnvelope();
+    Map<String, String> map = Maps.newHashMap();
 
     if (envelope.getDeployment() != null && envelope.getDeployment().length() > 0) {
       map.put(DEPLOYMENT, Objects.toString(envelope.getDeployment()));
@@ -72,9 +81,32 @@ public class MetricUtils {
        * The instanceIndex of the contained application
        * along with applicationId, should uniquely identify a container.
        */
-      map.put(APPLICATION_ID, envelope.getContainerMetric().getApplicationId());
+      String applicationId = envelope.getContainerMetric().getApplicationId();
+      map.put(APPLICATION_ID, applicationId);
       map.put(INSTANCE_INDEX, String.valueOf(envelope.getContainerMetric().getInstanceIndex().toString()));
     }
+
+    /**
+     * Add AppInfo tags for superior querying (better than applicationId GUIDs)
+     * Only applicable to CONTAINER_METRIC, HTTP_START_STOP and LOG_MESSAGE event_types
+     */
+    Optional<AppInfo> optionalAppInfo = appEnvelope.getAppInfo();
+    if (optionalAppInfo.isPresent()) {
+      AppInfo appInfo = optionalAppInfo.get();
+      String applicationName = appInfo.getApplicationName();
+      if (applicationName != null && applicationName.length() > 0) {
+        map.put(APPLICATION_NAME, applicationName);
+      }
+      String org = appInfo.getOrg();
+      if (org != null && org.length() > 0) {
+        map.put(ORG, org);
+      }
+      String space = appInfo.getSpace();
+      if (space != null && space.length() > 0) {
+        map.put(SPACE, space);
+      }
+    }
+
     // Add all pre-existing PCF envelope tags ...
     map.putAll(envelope.getTags());
     return map;

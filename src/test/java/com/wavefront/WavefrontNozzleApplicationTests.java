@@ -1,9 +1,12 @@
 package com.wavefront;
 
+import com.wavefront.model.AppEnvelope;
 import com.wavefront.props.FirehoseProperties;
 import com.wavefront.proxy.ProxyForwarder;
 import com.wavefront.proxy.ProxyForwarderImpl;
+import com.wavefront.service.AppInfoFetcher;
 import com.wavefront.service.FirehoseToWavefrontProxyConnector;
+import com.wavefront.service.FirehoseToWavefrontProxyConnectorImpl;
 import org.cloudfoundry.doppler.DopplerClient;
 import org.cloudfoundry.doppler.Envelope;
 import org.cloudfoundry.doppler.EventType;
@@ -14,6 +17,7 @@ import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Wavefront Firehose Nozzle Unit Tests
@@ -50,16 +54,17 @@ public class WavefrontNozzleApplicationTests {
     DopplerClient dopplerClient = EasyMock.createMock(DopplerClient.class);
     EasyMock.expect(dopplerClient.firehose(EasyMock.anyObject())).andReturn(Flux.just(envelope));
     ProxyForwarder proxyForwarder = EasyMock.createMock(ProxyForwarderImpl.class);
+    AppInfoFetcher appInfoFetcher = EasyMock.createMock(AppInfoFetcher.class);
 
     if (firehoseProperties.getEventTypes().stream().anyMatch(type -> type.toString().equals(eventType.toString()))) {
-      proxyForwarder.forward(envelope);
+      proxyForwarder.forward(new AppEnvelope(envelope, Optional.empty()));
       EasyMock.expectLastCall().once();
     }
 
     EasyMock.replay(dopplerClient, proxyForwarder);
 
-    FirehoseToWavefrontProxyConnector proxyConnector = new FirehoseToWavefrontProxyConnector(
-            dopplerClient, firehoseProperties, proxyForwarder);
+    FirehoseToWavefrontProxyConnector proxyConnector = new FirehoseToWavefrontProxyConnectorImpl(
+            dopplerClient, firehoseProperties, proxyForwarder, appInfoFetcher);
     proxyConnector.connect();
     // proxyForwarder.forward() is invoked on a different thread and
     // EasyMock.verify() is invoked on the current thread

@@ -25,6 +25,9 @@ public class Constants {
   public static final String MEMORY_BYTES_QUOTA_SUFFIX = "memory_bytes_quota";
 
   // Tag Keys
+  public static final String APPLICATION_NAME = "applicationName";
+  public static final String ORG = "org";
+  public static final String SPACE = "space";
   public static final String APPLICATION_ID = "applicationId";
   public static final String INSTANCE_INDEX = "instanceIndex";
   public static final String DEPLOYMENT = "deployment";
