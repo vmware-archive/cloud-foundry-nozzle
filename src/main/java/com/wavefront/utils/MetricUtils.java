@@ -1,18 +1,29 @@
 package com.wavefront.utils;
 
 import com.google.common.collect.Maps;
+
 import com.wavefront.model.AppEnvelope;
 import com.wavefront.model.AppInfo;
+
 import org.cloudfoundry.doppler.Envelope;
 
-import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.wavefront.utils.Constants.*;
+import javax.annotation.Nullable;
+
+import static com.wavefront.utils.Constants.APPLICATION_ID;
+import static com.wavefront.utils.Constants.APPLICATION_NAME;
+import static com.wavefront.utils.Constants.DEPLOYMENT;
+import static com.wavefront.utils.Constants.INSTANCE_INDEX;
+import static com.wavefront.utils.Constants.JOB;
+import static com.wavefront.utils.Constants.METRICS_NAME_SEP;
+import static com.wavefront.utils.Constants.ORG;
+import static com.wavefront.utils.Constants.PCF_PREFIX;
+import static com.wavefront.utils.Constants.SPACE;
 import static org.cloudfoundry.doppler.EventType.CONTAINER_METRIC;
 
 /**
@@ -83,7 +94,8 @@ public class MetricUtils {
        */
       String applicationId = envelope.getContainerMetric().getApplicationId();
       map.put(APPLICATION_ID, applicationId);
-      map.put(INSTANCE_INDEX, String.valueOf(envelope.getContainerMetric().getInstanceIndex().toString()));
+      map.put(INSTANCE_INDEX, String.valueOf(
+          envelope.getContainerMetric().getInstanceIndex().toString()));
     }
 
     /**

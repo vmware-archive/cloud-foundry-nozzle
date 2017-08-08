@@ -1,6 +1,7 @@
 package com.wavefront.proxy;
 
 import com.wavefront.model.AppEnvelope;
+
 import org.springframework.stereotype.Component;
 
 /**

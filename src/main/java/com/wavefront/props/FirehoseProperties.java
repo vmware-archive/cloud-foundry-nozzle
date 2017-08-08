@@ -12,8 +12,16 @@ import java.util.List;
  */
 @ConfigurationProperties(prefix = "pcf.firehose")
 public class FirehoseProperties {
+  /**
+   * List of event types you want to send to wavefront
+   */
   private List<EventType> eventTypes;
+
+  /**
+   * Firehose request subscription ID
+   */
   private String subscriptionId;
+
   /**
    * By default 4 threads sending metrics to proxy
    */

@@ -13,7 +13,8 @@ import static com.wavefront.utils.MetricUtils.getPcfMetricNamePrefix;
  */
 public class ValueMetricUtils {
   public static String getMetricName(Envelope envelope) {
-    return getPcfMetricNamePrefix() + getOrigin(envelope) + METRICS_NAME_SEP + envelope.getValueMetric().getName() +
-            METRICS_NAME_SEP + envelope.getValueMetric().getUnit();
+    return getPcfMetricNamePrefix() + getOrigin(envelope) + METRICS_NAME_SEP +
+        envelope.getValueMetric().getName() + METRICS_NAME_SEP +
+        envelope.getValueMetric().getUnit();
   }
 }
