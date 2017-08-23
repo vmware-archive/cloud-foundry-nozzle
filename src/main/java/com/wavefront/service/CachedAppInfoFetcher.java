@@ -13,10 +13,8 @@ import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.organizations.OrganizationEntity;
 import org.cloudfoundry.client.v2.spaces.GetSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.SpaceEntity;
-import org.cloudfoundry.reactor.ConnectionContext;
-import org.cloudfoundry.reactor.TokenProvider;
-import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient;
 import org.cloudfoundry.util.ResourceUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -47,18 +45,13 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
   private static final int PCF_FETCH_TIMEOUT_SECONDS = 120;
   private final Cache<String, Optional<AppInfo>> cache;
 
-  private final ConnectionContext connectionContext;
+  @Autowired
+  private CloudFoundryClient cfClient;
 
-  private final TokenProvider tokenProvider;
-
-  public CachedAppInfoFetcher(AppInfoProperties appInfoProperties,
-                              ConnectionContext connectionContext,
-                              TokenProvider tokenProvider) {
+  public CachedAppInfoFetcher(AppInfoProperties appInfoProperties) {
     cache = Caffeine.newBuilder().
         expireAfterWrite(appInfoProperties.getCacheExpireIntervalHours(), TimeUnit.HOURS).
         maximumSize(appInfoProperties.getAppInfoCacheSize()).build();
-    this.connectionContext = connectionContext;
-    this.tokenProvider = tokenProvider;
   }
 
   @Override
@@ -68,7 +61,7 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
     if (optionalAppInfo == null) {
       // not present in the cache ...
       return fetchFromPcf(applicationId).doOnNext(item -> {
-        // Put optionalAppInfo in the cache only if it is present
+        // Put value in the cache only if it is present
         if (item.isPresent()) {
           // Note - cache.put is thread safe
           cache.put(applicationId, item);
@@ -81,37 +74,30 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
   }
 
   private Mono<Optional<AppInfo>> fetchFromPcf(String applicationId) {
-    // A CloudFoundryClient can be instantiated on the fly with no real penalty and is totally
-    // stateless, simply combining a ConnectionContext and a TokenProvider to make a REST call.
-    CloudFoundryClient cfClient = ReactorCloudFoundryClient.builder().
-        connectionContext(connectionContext).tokenProvider(tokenProvider).build();
-    return getApplication(cfClient, applicationId).
-        then(app -> getSpace(cfClient, app.getSpaceId()).map(space -> Tuples.of(space, app))).
-        then(function((space, app) -> getOrganization(cfClient, space.getOrganizationId()).
+    return getApplication(applicationId).
+        then(app -> getSpace(app.getSpaceId()).map(space -> Tuples.of(space, app))).
+        then(function((space, app) -> getOrganization(space.getOrganizationId()).
             map(org -> Optional.of(new AppInfo(app.getName(), org.getName(), space.getName()))))).
         timeout(Duration.ofSeconds(PCF_FETCH_TIMEOUT_SECONDS)).
-        otherwise(t -> {
+        onErrorResume(t -> {
           logger.log(Level.WARNING, "Unable to fetch app details for applicationId:" +
               applicationId, t);
           return Mono.just(Optional.empty());
         });
   }
 
-  private Mono<ApplicationEntity> getApplication(CloudFoundryClient cfClient,
-                                                 String applicationId) {
+  private Mono<ApplicationEntity> getApplication(String applicationId) {
     return cfClient.applicationsV2().
         get(GetApplicationRequest.builder().applicationId(applicationId).build()).
         map(ResourceUtils::getEntity);
   }
 
-  private Mono<SpaceEntity> getSpace(CloudFoundryClient cfClient,
-                                     String spaceid) {
+  private Mono<SpaceEntity> getSpace(String spaceid) {
     return cfClient.spaces().get(GetSpaceRequest.builder().spaceId(spaceid).build()).
         map(ResourceUtils::getEntity);
   }
 
-  private Mono<OrganizationEntity> getOrganization(CloudFoundryClient cfClient,
-                                                   String orgId) {
+  private Mono<OrganizationEntity> getOrganization(String orgId) {
     return cfClient.organizations().
         get(GetOrganizationRequest.builder().organizationId(orgId).build()).
         map(ResourceUtils::getEntity);

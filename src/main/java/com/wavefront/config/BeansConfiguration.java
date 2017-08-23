@@ -9,6 +9,7 @@ import com.wavefront.service.FirehoseToWavefrontProxyConnector;
 import org.cloudfoundry.reactor.ConnectionContext;
 import org.cloudfoundry.reactor.DefaultConnectionContext;
 import org.cloudfoundry.reactor.TokenProvider;
+import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient;
 import org.cloudfoundry.reactor.doppler.ReactorDopplerClient;
 import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,13 @@ public class BeansConfiguration {
         pcfProperties.getHost(), pcfProperties.getUser()));
     return PasswordGrantTokenProvider.builder().username(pcfProperties.getUser()).
         password(pcfProperties.getPassword()).build();
+  }
+
+  @Bean
+  public ReactorCloudFoundryClient cloudFoundryClient(ConnectionContext connectionContext,
+                                                      TokenProvider tokenProvider) {
+    return ReactorCloudFoundryClient.builder().connectionContext(connectionContext).
+        tokenProvider(tokenProvider).build();
   }
 
   @Bean

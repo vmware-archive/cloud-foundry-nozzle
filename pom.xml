@@ -40,13 +40,13 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <version>3.0.6.RELEASE</version>
+            <version>3.0.7.RELEASE</version>
         </dependency>
 
         <dependency>
             <groupId>org.cloudfoundry</groupId>
             <artifactId>cloudfoundry-client-reactor</artifactId>
-            <version>2.3.0.RELEASE</version>
+            <version>2.16.0.RELEASE</version>
         </dependency>
 
         <dependency>
