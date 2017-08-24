@@ -1,7 +1,7 @@
 package com.wavefront.service;
 
 
-import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.wavefront.model.AppInfo;
 import com.wavefront.props.AppInfoProperties;
@@ -43,7 +43,7 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
    * How long to wait to receive AppInfo from PCF
    */
   private static final int PCF_FETCH_TIMEOUT_SECONDS = 120;
-  private final Cache<String, Optional<AppInfo>> cache;
+  private final AsyncLoadingCache<String, Optional<AppInfo>> cache;
 
   @Autowired
   private CloudFoundryClient cfClient;
@@ -51,26 +51,13 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
   public CachedAppInfoFetcher(AppInfoProperties appInfoProperties) {
     cache = Caffeine.newBuilder().
         expireAfterWrite(appInfoProperties.getCacheExpireIntervalHours(), TimeUnit.HOURS).
-        maximumSize(appInfoProperties.getAppInfoCacheSize()).build();
+        maximumSize(appInfoProperties.getAppInfoCacheSize()).buildAsync(
+        (key, executor) -> fetchFromPcf(key).toFuture());
   }
 
   @Override
   public Mono<Optional<AppInfo>> fetch(String applicationId) {
-    // Note - cache.get is thread safe
-    Optional<AppInfo> optionalAppInfo = cache.getIfPresent(applicationId);
-    if (optionalAppInfo == null) {
-      // not present in the cache ...
-      return fetchFromPcf(applicationId).doOnNext(item -> {
-        // Put value in the cache only if it is present
-        if (item.isPresent()) {
-          // Note - cache.put is thread safe
-          cache.put(applicationId, item);
-        }
-      });
-    } else {
-      // return cached value ...
-      return Mono.just(optionalAppInfo);
-    }
+    return Mono.fromFuture(cache.get(applicationId));
   }
 
   private Mono<Optional<AppInfo>> fetchFromPcf(String applicationId) {
