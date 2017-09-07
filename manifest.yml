@@ -8,6 +8,8 @@ applications:
   path: <ReplaceMe with path to the wavefront-nozzle JAR>
   buildpack: https://github.com/cloudfoundry/java-buildpack.git 
   env:
+    # Reactor HTTP client settings
+    JAVA_OPTS: '-Dreactor.ipc.netty.pool.maxConnections=32'
     # PCF properties
     # Replace the values below
     pcf.host: <ReplaceMe with PCF FQDN. Example: api.local.pcfdev.io>
@@ -21,6 +23,10 @@ applications:
     # Choose a value between 1 and 8 inclusive. Default to 4
     pcf.firehose.parallelism: 4
     pcf.firehose.subscriptionId: firehose-to-wavefront-proxy
+    # PCF AppInfo properties
+    pcf.appInfo.fetchAppInfo: true
+    pcf.appInfo.appInfoCacheSize: 5000
+    pcf.appInfo.cacheExpireIntervalHours: 6
     # Wavefront-Proxy properties
     wavefront.proxy.hostname: <ReplaceMe>
     wavefront.proxy.port: <ReplaceMe>

@@ -1,12 +1,14 @@
 package com.wavefront.proxy;
 
 import com.google.common.util.concurrent.RateLimiter;
+
 import com.wavefront.integrations.Wavefront;
 import com.wavefront.model.AppEnvelope;
 import com.wavefront.props.WavefrontProxyProperties;
 import com.wavefront.utils.ContainerMetricUtils;
 import com.wavefront.utils.CounterEventUtils;
 import com.wavefront.utils.ValueMetricUtils;
+
 import org.cloudfoundry.doppler.Envelope;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +18,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.wavefront.utils.Constants.*;
-import static com.wavefront.utils.MetricUtils.*;
+import static com.wavefront.utils.Constants.CPU_PERCENTAGE_SUFFIX;
+import static com.wavefront.utils.Constants.DELTA_SUFFIX;
+import static com.wavefront.utils.Constants.DISK_BYTES_QUOTA_SUFFIX;
+import static com.wavefront.utils.Constants.DISK_BYTES_SUFFIX;
+import static com.wavefront.utils.Constants.MEMORY_BYTES_QUOTA_SUFFIX;
+import static com.wavefront.utils.Constants.MEMORY_BYTES_SUFFIX;
+import static com.wavefront.utils.Constants.TOTAL_SUFFIX;
+import static com.wavefront.utils.MetricUtils.getSource;
+import static com.wavefront.utils.MetricUtils.getTags;
+import static com.wavefront.utils.MetricUtils.getTimestamp;
 
 /**
  * ProxyFowarder implementation
@@ -27,7 +37,8 @@ import static com.wavefront.utils.MetricUtils.*;
 @Component
 public class ProxyForwarderImpl implements ProxyForwarder {
 
-  private static final Logger logger = Logger.getLogger(ProxyForwarderImpl.class.getCanonicalName());
+  private static final Logger logger = Logger.getLogger(
+      ProxyForwarderImpl.class.getCanonicalName());
   /**
    * Log summary of numMetrics sent every 5 seconds
    */
@@ -36,9 +47,9 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   private final Wavefront wavefront;
 
   public ProxyForwarderImpl(WavefrontProxyProperties proxyProperties)
-          throws IOException {
+      throws IOException {
     logger.info(String.format("Forwarding PCF metrics to Wavefront proxy at %s:%s",
-            proxyProperties.getHostname(), proxyProperties.getPort()));
+        proxyProperties.getHostname(), proxyProperties.getPort()));
     this.wavefront = new Wavefront(proxyProperties.getHostname(), proxyProperties.getPort());
   }
 
@@ -49,37 +60,39 @@ public class ProxyForwarderImpl implements ProxyForwarder {
       case VALUE_METRIC:
         // MetricName: "pcf.<origin>.<name>.<unit>"
         send(ValueMetricUtils.getMetricName(envelope), envelope.getValueMetric().value(),
-                getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
+            getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
         return;
       case COUNTER_EVENT:
         // MetricName: "pcf.<origin>.<name>.total"
-        send(CounterEventUtils.getMetricName(envelope, TOTAL_SUFFIX), envelope.getCounterEvent().getTotal(),
-                getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
+        send(CounterEventUtils.getMetricName(envelope, TOTAL_SUFFIX),
+            envelope.getCounterEvent().getTotal(),
+            getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
         // MetricName: "pcf.<origin>.<name>.delta"
-        send(CounterEventUtils.getMetricName(envelope, DELTA_SUFFIX), envelope.getCounterEvent().getDelta(),
-                getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
+        send(CounterEventUtils.getMetricName(envelope, DELTA_SUFFIX),
+            envelope.getCounterEvent().getDelta(),
+            getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
         return;
       case CONTAINER_METRIC:
         // MetricName: "pcf.container.<origin>.cpu_percentage"
         send(ContainerMetricUtils.getMetricName(envelope, CPU_PERCENTAGE_SUFFIX),
-                envelope.getContainerMetric().getCpuPercentage(), getTimestamp(envelope),
-                getSource(envelope), getTags(appEnvelope));
+            envelope.getContainerMetric().getCpuPercentage(), getTimestamp(envelope),
+            getSource(envelope), getTags(appEnvelope));
         // MetricName: "pcf.container.<origin>.disk_bytes"
         send(ContainerMetricUtils.getMetricName(envelope, DISK_BYTES_SUFFIX),
-                envelope.getContainerMetric().getDiskBytes(), getTimestamp(envelope),
-                getSource(envelope), getTags(appEnvelope));
+            envelope.getContainerMetric().getDiskBytes(), getTimestamp(envelope),
+            getSource(envelope), getTags(appEnvelope));
         // MetricName: "pcf.container.<origin>.disk_bytes_quota"
         send(ContainerMetricUtils.getMetricName(envelope, DISK_BYTES_QUOTA_SUFFIX),
-                envelope.getContainerMetric().getDiskBytesQuota(), getTimestamp(envelope),
-                getSource(envelope), getTags(appEnvelope));
+            envelope.getContainerMetric().getDiskBytesQuota(), getTimestamp(envelope),
+            getSource(envelope), getTags(appEnvelope));
         // MetricName: "pcf.container.<origin>.memory_bytes"
         send(ContainerMetricUtils.getMetricName(envelope, MEMORY_BYTES_SUFFIX),
-                envelope.getContainerMetric().getMemoryBytes(), getTimestamp(envelope),
-                getSource(envelope), getTags(appEnvelope));
+            envelope.getContainerMetric().getMemoryBytes(), getTimestamp(envelope),
+            getSource(envelope), getTags(appEnvelope));
         // MetricName: "pcf.container.<origin>.memory_bytes_quota"
         send(ContainerMetricUtils.getMetricName(envelope, MEMORY_BYTES_QUOTA_SUFFIX),
-                envelope.getContainerMetric().getMemoryBytesQuota(), getTimestamp(envelope),
-                getSource(envelope), getTags(appEnvelope));
+            envelope.getContainerMetric().getMemoryBytesQuota(), getTimestamp(envelope),
+            getSource(envelope), getTags(appEnvelope));
         return;
       case ERROR:
       case HTTP_START_STOP:
@@ -89,7 +102,8 @@ public class ProxyForwarderImpl implements ProxyForwarder {
     }
   }
 
-  private void send(String metricName, double metricValue, Long timestamp, String source, Map<String, String> tags) {
+  private void send(String metricName, double metricValue, Long timestamp, String source,
+                    Map<String, String> tags) {
     try {
       // The if else if condition is not needed with the latest proxy but
       // what if some customer is running Wavefront PCF nozzle with an older proxy ??

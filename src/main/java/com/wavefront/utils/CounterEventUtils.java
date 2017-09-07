@@ -14,6 +14,6 @@ import static com.wavefront.utils.MetricUtils.getPcfMetricNamePrefix;
 public class CounterEventUtils {
   public static String getMetricName(Envelope envelope, String suffix) {
     return getPcfMetricNamePrefix() + getOrigin(envelope) + METRICS_NAME_SEP +
-            envelope.getCounterEvent().getName() + METRICS_NAME_SEP + suffix;
+        envelope.getCounterEvent().getName() + METRICS_NAME_SEP + suffix;
   }
 }
