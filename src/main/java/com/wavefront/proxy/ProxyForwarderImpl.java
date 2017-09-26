@@ -126,7 +126,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   private void send(String metricName, double metricValue, Long timestamp, String source,
                     Map<String, String> tags) {
     // Add custom tags to the point metrics
-    // Note: Only new maps are supplied as the parameter "tags", 
+    // Note: Only new maps are supplied as the parameter "tags",
     // so no defensive copying is needed
     tags.putAll(customTags);
     try {
