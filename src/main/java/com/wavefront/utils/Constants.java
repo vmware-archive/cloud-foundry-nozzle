@@ -32,4 +32,5 @@ public class Constants {
   public static final String INSTANCE_INDEX = "instanceIndex";
   public static final String DEPLOYMENT = "deployment";
   public static final String JOB = "job";
+  public static final String CUSTOM_TAG_PREFIX = "customTag.";
 }

@@ -1,5 +1,7 @@
 package com.wavefront.proxy;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.RateLimiter;
 
 import com.wavefront.integrations.Wavefront;
@@ -13,12 +15,14 @@ import org.cloudfoundry.doppler.Envelope;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.wavefront.utils.Constants.CPU_PERCENTAGE_SUFFIX;
+import static com.wavefront.utils.Constants.CUSTOM_TAG_PREFIX;
 import static com.wavefront.utils.Constants.DELTA_SUFFIX;
 import static com.wavefront.utils.Constants.DISK_BYTES_QUOTA_SUFFIX;
 import static com.wavefront.utils.Constants.DISK_BYTES_SUFFIX;
@@ -45,12 +49,29 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   private final RateLimiter summaryLogger = RateLimiter.create(0.2);
   private final AtomicLong numMetrics = new AtomicLong(0);
   private final Wavefront wavefront;
+  private final ImmutableMap<String, String> customTags;
 
   public ProxyForwarderImpl(WavefrontProxyProperties proxyProperties)
       throws IOException {
     logger.info(String.format("Forwarding PCF metrics to Wavefront proxy at %s:%s",
         proxyProperties.getHostname(), proxyProperties.getPort()));
     this.wavefront = new Wavefront(proxyProperties.getHostname(), proxyProperties.getPort());
+
+    // Better to compute the custom tags once during init, instead of
+    // doing it for every metric.send()
+    // this also means "customTag.*" tags cannot be changed after the JVM is running
+    ImmutableMap.Builder builder = ImmutableMap.builder();
+    Enumeration<?> names = System.getProperties().propertyNames();
+    while (names.hasMoreElements()) {
+      String name = names.nextElement().toString();
+      if (name.startsWith(CUSTOM_TAG_PREFIX)) {
+        String key = name.substring(CUSTOM_TAG_PREFIX.length());
+        String value = System.getProperty(name);
+        builder.put(key, value);
+      }
+    }
+
+    customTags = builder.build();
   }
 
   @Override
@@ -104,6 +125,10 @@ public class ProxyForwarderImpl implements ProxyForwarder {
 
   private void send(String metricName, double metricValue, Long timestamp, String source,
                     Map<String, String> tags) {
+    // Add custom tags to the point metrics
+    // Note: Only new maps are supplied as the parameter "tags",
+    // so no defensive copying is needed
+    tags.putAll(customTags);
     try {
       // The if else if condition is not needed with the latest proxy but
       // what if some customer is running Wavefront PCF nozzle with an older proxy ??
