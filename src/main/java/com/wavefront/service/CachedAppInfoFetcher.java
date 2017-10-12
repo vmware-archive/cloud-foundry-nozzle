@@ -1,6 +1,7 @@
 package com.wavefront.service;
 
 
+import com.codahale.metrics.Counter;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.wavefront.model.AppInfo;
@@ -48,11 +49,17 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
   @Autowired
   private CloudFoundryClient cfClient;
 
-  public CachedAppInfoFetcher(AppInfoProperties appInfoProperties) {
+  private final Counter numFetchAppInfo;
+  private final Counter numFetchAppInfoError;
+
+  public CachedAppInfoFetcher(MetricsReporter metricsReporter,
+                              AppInfoProperties appInfoProperties) {
     cache = Caffeine.newBuilder().
         expireAfterWrite(appInfoProperties.getCacheExpireIntervalHours(), TimeUnit.HOURS).
         maximumSize(appInfoProperties.getAppInfoCacheSize()).buildAsync(
         (key, executor) -> fetchFromPcf(key).toFuture());
+    numFetchAppInfo = metricsReporter.registerCounter("fetch-app-info-from-pcf");
+    numFetchAppInfoError = metricsReporter.registerCounter("fetch-app-info-error");
   }
 
   @Override
@@ -61,13 +68,15 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
   }
 
   private Mono<Optional<AppInfo>> fetchFromPcf(String applicationId) {
+    numFetchAppInfo.inc();
     return getApplication(applicationId).
         then(app -> getSpace(app.getSpaceId()).map(space -> Tuples.of(space, app))).
         then(function((space, app) -> getOrganization(space.getOrganizationId()).
             map(org -> Optional.of(new AppInfo(app.getName(), org.getName(), space.getName()))))).
         timeout(Duration.ofSeconds(PCF_FETCH_TIMEOUT_SECONDS)).
         onErrorResume(t -> {
-          logger.log(Level.WARNING, "Unable to fetch app details for applicationId:" +
+          numFetchAppInfoError.inc();
+          logger.log(Level.WARNING, "Unable to fetch app details for applicationId: " +
               applicationId, t);
           return Mono.just(Optional.empty());
         });
@@ -79,8 +88,8 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
         map(ResourceUtils::getEntity);
   }
 
-  private Mono<SpaceEntity> getSpace(String spaceid) {
-    return cfClient.spaces().get(GetSpaceRequest.builder().spaceId(spaceid).build()).
+  private Mono<SpaceEntity> getSpace(String spaceId) {
+    return cfClient.spaces().get(GetSpaceRequest.builder().spaceId(spaceId).build()).
         map(ResourceUtils::getEntity);
   }
 

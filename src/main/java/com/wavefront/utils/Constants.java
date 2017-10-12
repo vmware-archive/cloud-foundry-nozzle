@@ -8,6 +8,7 @@ package com.wavefront.utils;
 public class Constants {
   public static final String WAVEFRONT_FIREHOSE_NOZZLE = "wavefront-firehose-nozzle";
   public static final String PCF_PREFIX = "pcf";
+  public static final String APP_METRICS_PREFIX = "app";
 
   // Wavefront Metric constants
   public static final String METRICS_NAME_SEP = ".";

@@ -1,12 +1,13 @@
 package com.wavefront.proxy;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.RateLimiter;
 
+import com.codahale.metrics.Counter;
 import com.wavefront.integrations.Wavefront;
 import com.wavefront.model.AppEnvelope;
 import com.wavefront.props.WavefrontProxyProperties;
+import com.wavefront.service.MetricsReporter;
 import com.wavefront.utils.ContainerMetricUtils;
 import com.wavefront.utils.CounterEventUtils;
 import com.wavefront.utils.ValueMetricUtils;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,14 +44,19 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   private static final Logger logger = Logger.getLogger(
       ProxyForwarderImpl.class.getCanonicalName());
   /**
-   * Log summary of numMetrics sent every 5 seconds
+   * Log summary of numMetrics counter every 5 seconds
    */
   private final RateLimiter summaryLogger = RateLimiter.create(0.2);
-  private final AtomicLong numMetrics = new AtomicLong(0);
+  private final Counter numMetricsSent;
+  private final Counter numValueMetricReceived;
+  private final Counter numCounterEventReceived;
+  private final Counter numContainerMetricReceived;
+  private final Counter metricsSendFailure;
   private final Wavefront wavefront;
   private final ImmutableMap<String, String> customTags;
 
-  public ProxyForwarderImpl(WavefrontProxyProperties proxyProperties)
+  public ProxyForwarderImpl(MetricsReporter metricsReporter,
+                            WavefrontProxyProperties proxyProperties)
       throws IOException {
     logger.info(String.format("Forwarding PCF metrics to Wavefront proxy at %s:%s",
         proxyProperties.getHostname(), proxyProperties.getPort()));
@@ -72,6 +77,12 @@ public class ProxyForwarderImpl implements ProxyForwarder {
     }
 
     customTags = builder.build();
+
+    numMetricsSent = metricsReporter.registerCounter("total-metrics-sent");
+    metricsSendFailure = metricsReporter.registerCounter("metrics-send-failure");
+    numValueMetricReceived = metricsReporter.registerCounter("value-metric-received");
+    numCounterEventReceived = metricsReporter.registerCounter("counter-event-received");
+    numContainerMetricReceived = metricsReporter.registerCounter("container-metric-received");
   }
 
   @Override
@@ -79,11 +90,13 @@ public class ProxyForwarderImpl implements ProxyForwarder {
     Envelope envelope = appEnvelope.getEnvelope();
     switch (envelope.getEventType()) {
       case VALUE_METRIC:
+        numValueMetricReceived.inc();
         // MetricName: "pcf.<origin>.<name>.<unit>"
         send(ValueMetricUtils.getMetricName(envelope), envelope.getValueMetric().value(),
             getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
         return;
       case COUNTER_EVENT:
+        numCounterEventReceived.inc();
         // MetricName: "pcf.<origin>.<name>.total"
         send(CounterEventUtils.getMetricName(envelope, TOTAL_SUFFIX),
             envelope.getCounterEvent().getTotal(),
@@ -94,6 +107,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
             getTimestamp(envelope), getSource(envelope), getTags(appEnvelope));
         return;
       case CONTAINER_METRIC:
+        numContainerMetricReceived.inc();
         // MetricName: "pcf.container.<origin>.cpu_percentage"
         send(ContainerMetricUtils.getMetricName(envelope, CPU_PERCENTAGE_SUFFIX),
             envelope.getContainerMetric().getCpuPercentage(), getTimestamp(envelope),
@@ -140,16 +154,17 @@ public class ProxyForwarderImpl implements ProxyForwarder {
         // microseconds -> convert to milliseconds
         timestamp /= 1000;
       }
-      numMetrics.incrementAndGet();
+      numMetricsSent.inc();
       if (logger.isLoggable(Level.FINE)) {
         logger.fine("Sending metric:" + metricName + " at timestamp: " + timestamp);
       }
       if (summaryLogger.tryAcquire()) {
-        logger.info("Total number of metrics sent: " + numMetrics);
+        logger.info("Total number of metrics sent: " + numMetricsSent.getCount());
       }
       wavefront.send(metricName, metricValue, timestamp, source, tags);
     } catch (IOException e) {
       logger.log(Level.WARNING, "Can't send data to Wavefront proxy!", e);
+      metricsSendFailure.inc();
     }
   }
 }
