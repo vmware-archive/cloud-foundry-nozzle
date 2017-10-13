@@ -8,6 +8,7 @@ import com.wavefront.proxy.ProxyForwarderImpl;
 import com.wavefront.service.AppInfoFetcher;
 import com.wavefront.service.FirehoseToWavefrontProxyConnector;
 import com.wavefront.service.FirehoseToWavefrontProxyConnectorImpl;
+import com.wavefront.service.WavefrontMetricsReporter;
 
 import org.cloudfoundry.doppler.DopplerClient;
 import org.cloudfoundry.doppler.Envelope;
@@ -70,7 +71,8 @@ public class WavefrontNozzleApplicationTests {
     EasyMock.replay(dopplerClient, proxyForwarder);
 
     FirehoseToWavefrontProxyConnector proxyConnector = new FirehoseToWavefrontProxyConnectorImpl(
-        dopplerClient, firehoseProperties, appInfoProperties, proxyForwarder, appInfoFetcher);
+        new WavefrontMetricsReporter(), dopplerClient, firehoseProperties, appInfoProperties,
+        proxyForwarder, appInfoFetcher);
     proxyConnector.connect();
     // proxyForwarder.forward() is invoked on a different thread and
     // EasyMock.verify() is invoked on the current thread
