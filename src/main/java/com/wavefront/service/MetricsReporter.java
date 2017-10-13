@@ -15,8 +15,8 @@ public interface MetricsReporter {
   /**
    * Register Counter with Metric Registry
    *
-   * @param name
-   * @return
+   * @param name Name of the counter
+   * @return Counter
    */
   Counter registerCounter(String name);
 }

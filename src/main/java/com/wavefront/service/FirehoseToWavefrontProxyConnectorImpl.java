@@ -35,7 +35,7 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
   private final DopplerClient dopplerClient;
   private final FirehoseProperties firehoseProperties;
   private final AppInfoProperties appInfoProperties;
-  private ProxyForwarder proxyForwarder;
+  private final ProxyForwarder proxyForwarder;
   private final AppInfoFetcher appInfoFetcher;
   private final Counter numProcessedEvents;
   private final Counter numUnprocessedEvents;
@@ -89,7 +89,7 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
             numEmptyAppInfoEnvelope.inc();
             return Mono.just(new AppEnvelope(envelope, Optional.empty()));
           }
-        }).subscribe(appEnvelope -> proxyForwarder.forward(appEnvelope));
+        }).subscribe(proxyForwarder::forward);
     // TODO: Can apply back-pressure if nozzle cannot keep up with the firehose
     // i.e. onBackpressureBuffer(<BUFFER_SIZE>, BufferOverflowStrategy.DROP_LATEST)
     // need to figure out <BUFFER_SIZE> before we enable this ...
