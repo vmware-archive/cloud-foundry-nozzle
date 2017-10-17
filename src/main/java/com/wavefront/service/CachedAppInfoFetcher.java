@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.wavefront.model.AppInfo;
 import com.wavefront.props.AppInfoProperties;
+import com.wavefront.utils.MetricsRecorderStatsCounter;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
@@ -56,8 +57,9 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
                               AppInfoProperties appInfoProperties) {
     cache = Caffeine.newBuilder().
         expireAfterWrite(appInfoProperties.getCacheExpireIntervalHours(), TimeUnit.HOURS).
-        maximumSize(appInfoProperties.getAppInfoCacheSize()).buildAsync(
-        (key, executor) -> fetchFromPcf(key).toFuture());
+        maximumSize(appInfoProperties.getAppInfoCacheSize()).
+        recordStats(() -> new MetricsRecorderStatsCounter(metricsReporter)).
+        buildAsync((key, executor) -> fetchFromPcf(key).toFuture());
     numFetchAppInfo = metricsReporter.registerCounter("fetch-app-info-from-pcf");
     numFetchAppInfoError = metricsReporter.registerCounter("fetch-app-info-error");
   }

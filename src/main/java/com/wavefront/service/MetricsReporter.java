@@ -1,6 +1,8 @@
 package com.wavefront.service;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 
 import org.springframework.stereotype.Service;
 
@@ -19,4 +21,21 @@ public interface MetricsReporter {
    * @return Counter
    */
   Counter registerCounter(String name);
+
+  /**
+   * Register Timer with Metric Registry
+   *
+   * @param name Name of the timer
+   * @return Timer
+   */
+  Timer registerTimer(String name);
+
+  /**
+   * Register Meter with Metric Registry
+   *
+   * @param name Name of the meter
+   * @return Meter
+   */
+  Meter registerMeter(String name);
+
 }

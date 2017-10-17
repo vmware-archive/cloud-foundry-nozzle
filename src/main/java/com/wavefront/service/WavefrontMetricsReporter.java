@@ -2,9 +2,11 @@ package com.wavefront.service;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.Timer;
 import com.wavefront.integrations.metrics.WavefrontReporter;
 import com.wavefront.props.WavefrontProxyProperties;
 
@@ -68,6 +70,18 @@ public class WavefrontMetricsReporter implements MetricsReporter {
   @Override
   public Counter registerCounter(String name) {
     return metricRegistry.counter(WAVEFRONT_FIREHOSE_NOZZLE + METRICS_NAME_SEP +
+        APP_METRICS_PREFIX + METRICS_NAME_SEP + name);
+  }
+
+  @Override
+  public Timer registerTimer(String name) {
+    return metricRegistry.timer(WAVEFRONT_FIREHOSE_NOZZLE + METRICS_NAME_SEP +
+        APP_METRICS_PREFIX + METRICS_NAME_SEP + name);
+  }
+
+  @Override
+  public Meter registerMeter(String name) {
+    return metricRegistry.meter(WAVEFRONT_FIREHOSE_NOZZLE + METRICS_NAME_SEP +
         APP_METRICS_PREFIX + METRICS_NAME_SEP + name);
   }
 }
