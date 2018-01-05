@@ -1,5 +1,7 @@
 package com.wavefront;
 
+import com.codahale.metrics.MetricRegistry;
+import com.wavefront.integrations.metrics.WavefrontReporter;
 import com.wavefront.model.AppEnvelope;
 import com.wavefront.props.AppInfoProperties;
 import com.wavefront.props.FirehoseProperties;
@@ -70,8 +72,10 @@ public class WavefrontNozzleApplicationTests {
 
     EasyMock.replay(dopplerClient, proxyForwarder);
 
+    WavefrontMetricsReporter wavefrontMetricsReporter = new WavefrontMetricsReporter();
+    wavefrontMetricsReporter.setMetricRegistry(new MetricRegistry());
     FirehoseToWavefrontProxyConnector proxyConnector = new FirehoseToWavefrontProxyConnectorImpl(
-        new WavefrontMetricsReporter(), dopplerClient, firehoseProperties, appInfoProperties,
+        wavefrontMetricsReporter, dopplerClient, firehoseProperties, appInfoProperties,
         proxyForwarder, appInfoFetcher);
     proxyConnector.connect();
     // proxyForwarder.forward() is invoked on a different thread and
