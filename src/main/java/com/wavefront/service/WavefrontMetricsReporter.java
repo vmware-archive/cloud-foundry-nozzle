@@ -1,5 +1,7 @@
 package com.wavefront.service;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
@@ -40,6 +42,11 @@ public class WavefrontMetricsReporter implements MetricsReporter {
 
   @Autowired
   private MetricRegistry metricRegistry;
+
+  @VisibleForTesting
+  public void setMetricRegistry(MetricRegistry metricRegistry) {
+    this.metricRegistry = metricRegistry;
+  }
 
   @Autowired
   private SystemPublicMetrics systemPublicMetrics;
