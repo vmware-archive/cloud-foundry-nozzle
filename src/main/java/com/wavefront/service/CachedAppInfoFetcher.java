@@ -72,8 +72,8 @@ public class CachedAppInfoFetcher implements AppInfoFetcher {
   private Mono<Optional<AppInfo>> fetchFromPcf(String applicationId) {
     numFetchAppInfo.inc();
     return getApplication(applicationId).
-        then(app -> getSpace(app.getSpaceId()).map(space -> Tuples.of(space, app))).
-        then(function((space, app) -> getOrganization(space.getOrganizationId()).
+        flatMap(app -> getSpace(app.getSpaceId()).map(space -> Tuples.of(space, app))).
+        flatMap(function((space, app) -> getOrganization(space.getOrganizationId()).
             map(org -> Optional.of(new AppInfo(app.getName(), org.getName(), space.getName()))))).
         timeout(Duration.ofSeconds(PCF_FETCH_TIMEOUT_SECONDS)).
         onErrorResume(t -> {
