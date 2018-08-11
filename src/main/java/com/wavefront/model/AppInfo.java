@@ -28,4 +28,23 @@ public class AppInfo {
     return space;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || !(o instanceof AppInfo)) {
+      return false;
+    }
+
+    AppInfo other = (AppInfo) o;
+    return applicationName.equals(other.applicationName) && org.equals(other.org) &&
+        space.equals(other.space);
+  }
+
+  @Override
+  public int hashCode() {
+    return 17 * applicationName.hashCode() + 31 * org.hashCode() + 53 * space.hashCode();
+  }
 }

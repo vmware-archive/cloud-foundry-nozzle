@@ -61,38 +61,53 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
 
   @Override
   public void connect() {
-    logger.info(String.format("Connecting to firehose using subscription id: %s and " +
-            "forwarding following event types: %s in parallel: %s",
-        firehoseProperties.getSubscriptionId(),
-        String.join(", ", firehoseProperties.getEventTypes().toString()),
-        firehoseProperties.getParallelism()));
+    try {
+      logger.info(String.format("Connecting to firehose using subscription id: %s and " +
+              "forwarding following event types: %s in parallel: %s",
+          firehoseProperties.getSubscriptionId(),
+          String.join(", ", firehoseProperties.getEventTypes().toString()),
+          firehoseProperties.getParallelism()));
 
-    dopplerClient.firehose(FirehoseRequest.builder().subscriptionId(
-        firehoseProperties.getSubscriptionId()).build()).
-        subscribeOn(Schedulers.newParallel(WAVEFRONT_FIREHOSE_NOZZLE,
-            firehoseProperties.getParallelism())).
-        filter(envelope -> {
-          boolean ret = filterEventType(envelope.getEventType());
-          if (ret) {
-            numProcessedEvents.inc();
-          } else {
-            numUnprocessedEvents.inc();
-          }
-          return ret;
-        }).flatMap(envelope -> {
-          if (appInfoProperties.isFetchAppInfo() &&
-              envelope.getEventType() == EventType.CONTAINER_METRIC) {
-            numFetchAppInfoEnvelope.inc();
-            return appInfoFetcher.fetch(envelope.getContainerMetric().getApplicationId()).
-                map(optionalAppInfo -> new AppEnvelope(envelope, optionalAppInfo));
-          } else {
-            numEmptyAppInfoEnvelope.inc();
-            return Mono.just(new AppEnvelope(envelope, Optional.empty()));
-          }
-        }).subscribe(proxyForwarder::forward);
-    // TODO: Can apply back-pressure if nozzle cannot keep up with the firehose
-    // i.e. onBackpressureBuffer(<BUFFER_SIZE>, BufferOverflowStrategy.DROP_LATEST)
-    // need to figure out <BUFFER_SIZE> before we enable this ...
+      dopplerClient.firehose(FirehoseRequest.builder().subscriptionId(
+          firehoseProperties.getSubscriptionId()).build()).
+          subscribeOn(Schedulers.newParallel(WAVEFRONT_FIREHOSE_NOZZLE,
+              firehoseProperties.getParallelism())).
+          filter(envelope -> {
+            boolean ret = filterEventType(envelope.getEventType());
+            if (ret) {
+              numProcessedEvents.inc();
+            } else {
+              numUnprocessedEvents.inc();
+            }
+            return ret;
+          }).flatMap(envelope -> {
+        if (appInfoProperties.isFetchAppInfo() &&
+            envelope.getEventType() == EventType.CONTAINER_METRIC) {
+          numFetchAppInfoEnvelope.inc();
+          return appInfoFetcher.fetch(envelope.getContainerMetric().getApplicationId()).
+              map(optionalAppInfo -> new AppEnvelope(envelope, optionalAppInfo));
+        } else {
+          numEmptyAppInfoEnvelope.inc();
+          return Mono.just(new AppEnvelope(envelope, Optional.empty()));
+        }
+      }).subscribe(proxyForwarder::forward);
+      // TODO: Can apply back-pressure if nozzle cannot keep up with the firehose
+      // i.e. onBackpressureBuffer(<BUFFER_SIZE>, BufferOverflowStrategy.DROP_LATEST)
+      // need to figure out <BUFFER_SIZE> before we enable this ...
+    } catch (IllegalStateException e) {
+      /*
+       *  Need to retry, see below issues for more details
+       *  1) https://github.com/cloudfoundry/cf-java-client/issues/880
+       *  2) https://github.com/cloudfoundry/cf-java-client/issues/901
+       *  3) https://github.com/cloudfoundry/cf-java-client/issues/904
+       *
+       *  I hate this ugly hack !!!
+       *  will be fixed when cf-java-client will support v2, see ticket 904 above
+       */
+      if (e.getMessage().startsWith("Required field not set:")) {
+        connect();
+      }
+    }
   }
 
   private boolean filterEventType(@Nullable EventType eventType) {
