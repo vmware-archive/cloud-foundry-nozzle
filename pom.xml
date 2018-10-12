@@ -57,8 +57,8 @@
 
     <dependency>
       <groupId>com.wavefront</groupId>
-      <artifactId>java-client</artifactId>
-      <version>4.24</version>
+      <artifactId>wavefront-sdk-java</artifactId>
+      <version>0.9.0</version>
     </dependency>
 
     <dependency>
