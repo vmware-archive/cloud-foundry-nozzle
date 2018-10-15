@@ -4,9 +4,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.RateLimiter;
 
 import com.codahale.metrics.Counter;
-import com.wavefront.integrations.Wavefront;
 import com.wavefront.model.AppEnvelope;
 import com.wavefront.props.WavefrontProxyProperties;
+import com.wavefront.sdk.proxy.WavefrontProxyClient;
 import com.wavefront.service.MetricsReporter;
 import com.wavefront.utils.ContainerMetricUtils;
 import com.wavefront.utils.CounterEventUtils;
@@ -52,7 +52,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   private final Counter numCounterEventReceived;
   private final Counter numContainerMetricReceived;
   private final Counter metricsSendFailure;
-  private final Wavefront wavefront;
+  private final WavefrontProxyClient wavefrontProxyClient;
   private final ImmutableMap<String, String> customTags;
 
   public ProxyForwarderImpl(MetricsReporter metricsReporter,
@@ -60,7 +60,8 @@ public class ProxyForwarderImpl implements ProxyForwarder {
       throws IOException {
     logger.info(String.format("Forwarding PCF metrics to Wavefront proxy at %s:%s",
         proxyProperties.getHostname(), proxyProperties.getPort()));
-    this.wavefront = new Wavefront(proxyProperties.getHostname(), proxyProperties.getPort());
+    WavefrontProxyClient.Builder proxyBuilder = new WavefrontProxyClient.Builder(proxyProperties.getHostname());
+    this.wavefrontProxyClient = proxyBuilder.metricsPort(proxyProperties.getPort()).build();
 
     // Better to compute the custom tags once during init, instead of
     // doing it for every metric.send()
@@ -161,7 +162,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
       if (summaryLogger.tryAcquire()) {
         logger.info("Total number of metrics sent: " + numMetricsSent.getCount());
       }
-      wavefront.send(metricName, metricValue, timestamp, source, tags);
+      wavefrontProxyClient.sendMetric(metricName, metricValue, timestamp, source, tags);
     } catch (IOException e) {
       logger.log(Level.WARNING, "Can't send data to Wavefront proxy!", e);
       metricsSendFailure.inc();
