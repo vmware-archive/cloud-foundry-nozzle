@@ -52,7 +52,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
   private final Counter numCounterEventReceived;
   private final Counter numContainerMetricReceived;
   private final Counter metricsSendFailure;
-  private final WavefrontProxyClient wavefront;
+  private final WavefrontProxyClient wavefrontProxyClient;
   private final ImmutableMap<String, String> customTags;
 
   public ProxyForwarderImpl(MetricsReporter metricsReporter,
@@ -61,7 +61,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
     logger.info(String.format("Forwarding PCF metrics to Wavefront proxy at %s:%s",
         proxyProperties.getHostname(), proxyProperties.getPort()));
     WavefrontProxyClient.Builder proxyBuilder = new WavefrontProxyClient.Builder(proxyProperties.getHostname());
-    this.wavefront = proxyBuilder.metricsPort(proxyProperties.getPort()).build();
+    this.wavefrontProxyClient = proxyBuilder.metricsPort(proxyProperties.getPort()).build();
 
     // Better to compute the custom tags once during init, instead of
     // doing it for every metric.send()
@@ -162,7 +162,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
       if (summaryLogger.tryAcquire()) {
         logger.info("Total number of metrics sent: " + numMetricsSent.getCount());
       }
-      wavefront.sendMetric(metricName, metricValue, timestamp, source, tags);
+      wavefrontProxyClient.sendMetric(metricName, metricValue, timestamp, source, tags);
     } catch (IOException e) {
       logger.log(Level.WARNING, "Can't send data to Wavefront proxy!", e);
       metricsSendFailure.inc();
