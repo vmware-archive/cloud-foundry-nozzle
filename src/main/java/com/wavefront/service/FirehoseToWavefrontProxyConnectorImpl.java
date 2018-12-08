@@ -12,6 +12,7 @@ import org.cloudfoundry.doppler.FirehoseRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -41,6 +42,7 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
   private final Counter numUnprocessedEvents;
   private final Counter numFetchAppInfoEnvelope;
   private final Counter numEmptyAppInfoEnvelope;
+  private final Counter numSubscribeAppInfoEnvelope;
 
   public FirehoseToWavefrontProxyConnectorImpl(MetricsReporter metricsReporter,
                                                DopplerClient dopplerClient,
@@ -57,6 +59,7 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
     numUnprocessedEvents = metricsReporter.registerCounter("unprocessed-events");
     numFetchAppInfoEnvelope = metricsReporter.registerCounter("fetch-app-info-envelope");
     numEmptyAppInfoEnvelope = metricsReporter.registerCounter("empty-app-info-envelope");
+    numSubscribeAppInfoEnvelope = metricsReporter.registerCounter("subscribe-app-info-envelope");
   }
 
   @Override
@@ -90,7 +93,10 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
           numEmptyAppInfoEnvelope.inc();
           return Mono.just(new AppEnvelope(envelope, Optional.empty()));
         }
-      }).subscribe(proxyForwarder::forward);
+      }).subscribe(appEnvelope -> {
+        numSubscribeAppInfoEnvelope.inc();
+        proxyForwarder.forward(appEnvelope);
+      });
       // TODO: Can apply back-pressure if nozzle cannot keep up with the firehose
       // i.e. onBackpressureBuffer(<BUFFER_SIZE>, BufferOverflowStrategy.DROP_LATEST)
       // need to figure out <BUFFER_SIZE> before we enable this ...
@@ -106,7 +112,13 @@ public class FirehoseToWavefrontProxyConnectorImpl implements FirehoseToWavefron
        */
       if (e.getMessage().startsWith("Required field not set:")) {
         connect();
+      } else {
+        logger.log(Level.SEVERE, "Wavefront firehose nozzle failed.", e);
+        throw e;
       }
+    } catch (Throwable t) {
+      logger.log(Level.SEVERE, "Wavefront firehose nozzle failed.", t);
+      throw t;
     }
   }
 
