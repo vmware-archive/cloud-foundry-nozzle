@@ -9,7 +9,7 @@ applications:
   buildpack: https://github.com/cloudfoundry/java-buildpack.git
   env:
     # Reactor HTTP client settings
-    JAVA_OPTS: ''-DcustomTag.foundation=YOUR_PCF_FOUNDATION_NAME -Dreactor.ipc.netty.pool.maxConnections=32 -Dlogging.level.cloudfoundry-client.request=DEBUG -Dlogging.level.cloudfoundry-client.response=DEBUG -Dlogging.level.cloudfoundry-client.token=DEBUG' 
+    JAVA_OPTS: '-DcustomTag.foundation=YOUR_PCF_FOUNDATION_NAME -Dreactor.ipc.netty.pool.maxConnections=32 -Dlogging.level.cloudfoundry-client.request=DEBUG -Dlogging.level.cloudfoundry-client.response=DEBUG -Dlogging.level.cloudfoundry-client.token=DEBUG' 
     # PCF properties
     # Replace the values below
     pcf.host: <ReplaceMe with PCF FQDN. Example: api.local.pcfdev.io>
