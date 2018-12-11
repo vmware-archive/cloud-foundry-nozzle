@@ -1,4 +1,4 @@
-# Wavefront cloud-foundry-nozzle
+# Wavefront cloud-foundry-nozzle [![build status][ci-img]][ci]
 Wavefront Nozzle for Pivotal Cloud Foundry (PCF). The nozzle is deployed as an app in PCF as part of the [Wavefront by VMware Nozzle for PCF](https://network.pivotal.io/products/wavefront-nozzle/).
 
 
@@ -37,3 +37,6 @@ If you don't wish to deploy the wavefront-nozzle to a PCF instance, you can run/
 To run locally, you don't need the manifest file. Just update `src/main/resources/application.properties` with the same values as in the manifest file and run the application.
 
 **Note** - The nozzle will not run locally if you have an invalid application.properties.
+
+[ci-img]: https://travis-ci.com/wavefrontHQ/cloud-foundry-nozzle.svg?branch=master
+[ci]: https://travis-ci.com/wavefrontHQ/cloud-foundry-nozzle
