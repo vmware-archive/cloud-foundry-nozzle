@@ -144,6 +144,10 @@ public class ProxyForwarderImpl implements ProxyForwarder {
     // Note: Only new maps are supplied as the parameter "tags",
     // so no defensive copying is needed
     tags.putAll(customTags);
+
+    // remove tags with empty values
+    tags.entrySet().removeIf(e -> e.getValue() == null || e.getValue().isEmpty());
+
     try {
       // The if else if condition is not needed with the latest proxy but
       // what if some customer is running Wavefront PCF nozzle with an older proxy ??
@@ -163,7 +167,7 @@ public class ProxyForwarderImpl implements ProxyForwarder {
         logger.info("Total number of metrics sent: " + numMetricsSent.getCount());
       }
       wavefrontProxyClient.sendMetric(metricName, metricValue, timestamp, source, tags);
-    } catch (IOException e) {
+    } catch (IOException | IllegalArgumentException e) {
       logger.log(Level.WARNING, "Can't send data to Wavefront proxy!", e);
       metricsSendFailure.inc();
     }
