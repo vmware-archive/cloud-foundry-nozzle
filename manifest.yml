@@ -29,4 +29,4 @@ applications:
     pcf.appInfo.cacheExpireIntervalHours: 6
     # Wavefront-Proxy properties
     wavefront.proxy.hostname: <ReplaceMe>
-    wavefront.proxy.port: <ReplaceMe>
+    wavefront.proxy.port: 2878
