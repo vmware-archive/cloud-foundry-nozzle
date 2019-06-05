@@ -1,8 +1,9 @@
-# Wavefront cloud-foundry-nozzle [![build status][ci-img]][ci]
+# Wavefront cloud-foundry-nozzle (Retired) [![build status][ci-img]][ci]
 Wavefront Nozzle for Pivotal Cloud Foundry (PCF). The nozzle is deployed as an app in PCF as part of the [Wavefront by VMware Nozzle for PCF](https://network.pivotal.io/products/wavefront-nozzle/).
 
-
 The nozzle gathers data from the Loggregator Firehose and forwards those metrics to the Wavefront proxy.
+
+**Note**: This nozzle has been replaced with [cloud-foundry-nozzle-go](https://github.com/wavefrontHQ/cloud-foundry-nozzle-go).
 
 ## Requirements
 * A working Wavefront proxy with accessible `<hostname:port>`.
